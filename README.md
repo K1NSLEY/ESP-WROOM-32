@@ -9,4 +9,7 @@ E quero testar.
       saber
          oq
             oq
-                           oi
+                           oi.
+
+Teste novamente:
+   Oi, aprendendo.
