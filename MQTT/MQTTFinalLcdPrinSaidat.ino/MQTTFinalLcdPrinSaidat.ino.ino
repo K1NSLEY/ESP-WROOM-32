@@ -5,12 +5,12 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2); // Initializing an object for the LCD display with address 0x27, 16 columns, and 2 rows.
 int ledPin = 15;
 // Wi-Fi connection parameters
-const char* ssid = "Amadi_2G"; // Wi-Fi network name
-const char* password = "K1502042005"; // Wi-Fi network password
+const char* ssid = "SSID"; // Wi-Fi network name
+const char* password = "PASSWORD"; // Wi-Fi network password
 
 // MQTT Broker
 const char *mqtt_broker = "mqtt-dashboard.com"; // MQTT broker host
-const char *topic = "lcdtestdo15"; // Topic to subscribe to and publish
+const char *topic = "YOURTOPIC"; // Topic to subscribe to and publish
 const char *mqtt_username = ""; // MQTT username
 const char *mqtt_password = ""; // MQTT password
 const int mqtt_port = 1883; // MQTT port
