@@ -1,46 +1,44 @@
+#include <Wire.h> // Library used to manage communication between devices using the I2C protocol
+#include <LiquidCrystal_I2C.h> // Library for controlling an I2C LCD display
+#include "WiFi.h" // Library for configuring and connecting to Wi-Fi
+#include <PubSubClient.h> // Library for using the MQTT protocol
+LiquidCrystal_I2C lcd(0x27, 16, 2); // Initializing an object for the LCD display with address 0x27, 16 columns, and 2 rows.
 
-#include <Wire.h> //Biblioteca utilizada gerenciar a comunicação entre dispositicos através do protocolo I2C
-#include <LiquidCrystal_I2C.h>
-#include "WiFi.h"
-#include <PubSubClient.h>
-LiquidCrystal_I2C lcd(0x27,16,2);
-
-//Parametros de conexão
-const char* ssid = "Amadi_2G"; // REDE
-const char* password = "K1502042005"; // SENHA
-
+// Wi-Fi connection parameters
+const char* ssid = "SSID"; // Wi-Fi network name
+const char* password = "PASSWORD"; // Wi-Fi network password
 
 // MQTT Broker
-const char *mqtt_broker = "mqtt-dashboard.com";  //Host do broket
-const char *topic = "SEUTOPICONOVAIS";            //Topico a ser subscrito e publicado
-const char *mqtt_username = "";         //Usuario
-const char *mqtt_password = "";         //Senha
-const int mqtt_port = 1883;             //Porta
+const char *mqtt_broker = "mqtt-dashboard.com"; // MQTT broker host
+const char *topic = "YOURTOPICHERE"; // Topic to subscribe to and publish
+const char *mqtt_username = ""; // MQTT username
+const char *mqtt_password = ""; // MQTT password
+const int mqtt_port = 1883; // MQTT port
 
-//Variáveis
+// Variables
 bool mqttStatus = 0;
 
-//Objetos
+// Objects
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-//Prototipos
+// Function prototypes
 bool connectMQTT();
 void callback(char *topic, byte * payload, unsigned int length);
 
 void setup(void)
 {
-  lcd.init(); //Inicializa a comunicação com o display já conectado
-  lcd.clear(); //Limpa a tela do display
-  lcd.backlight(); //Aciona a luz de fundo do display
+  lcd.init(); // Initializes communication with the connected display
+  lcd.clear(); // Clears the display screen
+  lcd.backlight(); // Turns on the backlight of the display
   Serial.begin(9600);
 
-  // Conectar
+  // Connect to Wi-Fi
   WiFi.begin(ssid, password);
 
-  //Aguardando conexão
+  // Waiting for connection
   Serial.println();
-  Serial.print("Conectando");
+  Serial.print("Connecting");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -48,19 +46,17 @@ void setup(void)
   Serial.println("");
   Serial.println("WiFi connected");
 
-  //Envia IP através da UART
+  // Send IP over UART
   Serial.println(WiFi.localIP());
 
-  mqttStatus =  connectMQTT();
+  mqttStatus = connectMQTT();
 
 }
 
 void loop() {
- static long long pooling  = 0;
-    client.loop();    
-
-}       
-
+  static long long pooling = 0;
+  client.loop();
+}
 
 bool connectMQTT() {
   byte tentativa = 0;
@@ -72,13 +68,13 @@ bool connectMQTT() {
     client_id += String(WiFi.macAddress());
 
     if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-      Serial.println("Exito na conexão:");
-      Serial.printf("Cliente %s conectado ao broker\n", client_id.c_str());
+      Serial.println("Connection successful:");
+      Serial.printf("Client %s connected to the broker\n", client_id.c_str());
     } else {
-      Serial.print("Falha ao conectar: ");
+      Serial.print("Failed to connect: ");
       Serial.print(client.state());
       Serial.println();
-      Serial.print("Tentativa: ");
+      Serial.print("Attempt: ");
       Serial.println(tentativa);
       delay(2000);
     }
@@ -86,15 +82,16 @@ bool connectMQTT() {
   } while (!client.connected() && tentativa < 5);
 
   if (tentativa < 5) {
-    // publish and subscribe   
-    client.publish(topic, "{teste123,113007042022}"); 
+    // Publish and subscribe
+    client.publish(topic, "{test123,113007042022}");
     client.subscribe(topic);
     return 1;
   } else {
-    Serial.println("Não conectado");    
+    Serial.println("Not connected");
     return 0;
   }
 }
+
 void callback(char *topic, byte *payload, unsigned int length) {
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
@@ -107,4 +104,3 @@ void callback(char *topic, byte *payload, unsigned int length) {
   delay(5000);
   lcd.clear();
 }
-
