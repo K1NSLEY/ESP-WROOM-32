@@ -1,136 +1,88 @@
-
 #include <WiFi.h>
+#include <Arduino.h>
 #include <WebServer.h>
 
-/* Put your SSID & Password */
-const char* ssid = "Leiteiro";  // Enter SSID here
-const char* password = "kins7215";  //Enter Password here
+/* Defina o SSID e a senha da sua rede Wi-Fi */
+const char* ssid = "Leiteiro";  // Insira o nome da sua rede Wi-Fi
+const char* password = "kins7215";  // Insira a senha da sua rede Wi-Fi
 
-/* Put IP Address details */ 
-IPAddress local_ip(192,168,1,99);
-IPAddress gateway(192,168,1,1);
-IPAddress subnet(255,255,255,0);
+/* Configuração do IP da rede Wi-Fi */
+IPAddress local_ip(192, 168, 1, 99);
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
 
 WebServer server(80);
 
-uint8_t LED1pin = 34;
-bool LED1status = LOW;
+const int motorPin1 = 14; // Conecte a um dos pinos de controle da ponte H
+const int motorPin2 = 15; // Conecte ao outro pino de controle da ponte H
+int velocidade = 0;
+int incremento = 10;
+int direcao = 0; // 0 para parar, 1 para aumentar a velocidade, -1 para diminuir
 
-uint8_t LED2pin = 12;
-bool LED2status = LOW;
+
+uint8_t ledPin = 34; // Pino do LED
+bool ledStatus = LOW;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(LED1pin, OUTPUT);
-  pinMode(LED2pin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
 
+  // Configura a rede Wi-Fi em modo de ponto de acesso (AP)
   WiFi.softAP(ssid, password);
   WiFi.softAPConfig(local_ip, gateway, subnet);
   delay(100);
-  
-  server.on("/", handle_OnConnect);
-  server.on("/led1on", handle_led1on);
-  server.on("/led1off", handle_led1off);
-  server.on("/led2on", handle_led2on);
-  server.on("/led2off", handle_led2off);
-  server.onNotFound(handle_NotFound);
-  
+
+  // Configura os tratadores de rota para o botão de controle
+  server.on("/", HTTP_GET, handle_OnConnect);
+  server.on("/toggle", HTTP_GET, handle_toggle);
+
   server.begin();
-  Serial.println("HTTP server started");
+  Serial.println("Servidor HTTP iniciado");
 }
+
 void loop() {
-  
+  if (ledStatus = true) {
+      direcao = 1; //Comece a aumentar a velocidad
+  }
+  velocidade += incremento * direcao;
+  velocidade = constrain(velocidade, 0, 260);
+  analogWrite(motorPin1, velocidade); // Use um dos pinos de controle da ponte H
+  digitalWrite(motorPin2, LOW);       // Desligue o outro pino
+  Serial.println(velocidade);
+  delay(100);
+  if (velocidade == 260) {
+    direcao = -1;
+  }
+
+  // Se a velocidade for 0, pare
+  if (velocidade == 0) {
+    direcao = 0;
+  }
+
+
   server.handleClient();
-  if(LED1status)
-  {digitalWrite(LED1pin, HIGH);}
-  else
-  {digitalWrite(LED1pin, LOW);}
-  
-  if(LED2status)
-  {digitalWrite(LED2pin, HIGH);}
-  else
-  {digitalWrite(LED2pin, LOW);}
+  digitalWrite(ledPin, ledStatus); // Define o estado do LED com base em ledStatus
 }
 
 void handle_OnConnect() {
-  LED1status = LOW;
-  LED2status = LOW;
-  Serial.println("GPIO4 Status: OFF | GPIO5 Status: OFF");
-  server.send(200, "text/html", SendHTML(LED1status,LED2status)); 
+  String status = (ledStatus == HIGH) ? "AGUARDE" : "SOLICITE A PARADA";
+  String html = "<html><body style='text-align:center;'>";
+  html +="<meta charset=UTF-8>\n";
+  html +="<h1>🚦 Farol da Faixa Automatizada 🚦</h1>\n";
+  html +="<h3>🚦 Feito por Kinsley Amadi, Luiz Gabriel, Maria luiza, João Gabriel e Gabriel Novais 🚦</h3>\n";
+  html += "<p>Pressione o botão para pedir a faixa de pedestres :" + status + "</p>";
+  html += "<a href='/toggle' style='";
+  html += "display:inline-block; padding:10px 20px; font-size:20px; text-align:center; ";
+  html += "text-decoration:none; background-color:#3498db; color:white; border-radius:5px;'>";
+  html += "PEDIR FAIXA</a>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
 }
 
-
-
-//PRIMEIRO 
-
-void handle_led1on() {
-  LED1status = HIGH;
-  delay(100);
-  LED1status = LOW;
-  Serial.println("GPIO4 Status: ON");
-  server.send(200, "text/html", SendHTML(true,LED2status));
-}
-void handle_led1off() {                   
-  LED1status = LOW;
-  Serial.println("GPIO4 Status: OFF");
-  server.send(200, "text/html", SendHTML(false,LED2status)); 
-}
-//PRIMEIRO
-
-
-
-//SEGUNDO
-void handle_led2on() {
-  LED2status = HIGH;
-  delay(100);
-  LED2status = LOW;
-  Serial.println("GPIO5 Status: ON");
-  server.send(200, "text/html", SendHTML(LED1status,true)); 
-}
-
-void handle_led2off() {
-  LED2status = LOW;
-  Serial.println("GPIO5 Status: OFF");
-  server.send(200, "text/html", SendHTML(LED1status,false)); 
-}
-//SEGUNDO
-
-void handle_NotFound(){
-  server.send(404, "text/plain", "ERRADO BURRÃO, VAI NO URL SERTO");
-}
-
-String SendHTML(uint8_t led1stat, uint8_t led2stat){
- 
-  String ptr = "<!DOCTYPE html> <html>\n";
-  ptr +="<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">\n";
-  ptr +="<title>LED Control</title>\n";
-  ptr +="<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}\n";
-  ptr +="body{margin-top: 50px;} h1 {color: #444444;margin: 50px auto 20px;} h3 {color: #444444;margin-bottom: 50px;}\n";
-  ptr +=".button {display: block;width: 100px;background-color: #3498db;border: none;color: white;padding: 8px 30px;text-decoration: none;font-size: 25px;margin: 0px auto 35px;cursor: pointer;border-radius: 4px;}\n";
-  ptr +=".button-on {background-color: #732727;}\n";
-  ptr +=".button-on:active {background-color: ##368030;}\n";
-  ptr +=".button-off {background-color: #05ff09;}\n";
-  ptr +=".button-off:active {background-color: ##c92a1e;}\n";
-  ptr +="p {font-size: 14px;color: #888;margin-bottom: 10px;}\n";
-  ptr +="</style>\n";
-  ptr +="<meta charset=UTF-8>\n";
-  ptr += "<meta http-equiv=\"refresh\" content=\"5\"> <!-- Adicione esta linha -->\n";
-  ptr +="</head>\n";
-  ptr +="<body>\n";
-  ptr +="<h1>🚦 Farol da Faixa Automatizada 🚦</h1>\n";
-  ptr +="<h3>🚦 Feito por Kinsley Amadi, Luiz Gabriel, Maria luiza, João Gabriel e Gabriel Novais 🚦</h3>\n";
-  
-  if(led1stat)
-  {ptr +="<p>Iluminação 1: LIGADA</p><a class=\"button button-off\" href=\"/led1off\">Apagar</a>\n";}
-  else
-  {ptr +="<p>Iluminação 1: DESLIGADA</p><a class=\"button button-on\" href=\"/led1on\">Acender</a>\n";}
-
-  if(led2stat)
-  {ptr +="<p>Iluminação 2: LIGADA</p><a class=\"button button-off\" href=\"/led2off\">Apagar</a>\n";}
-  else
-  {ptr +="<p>Iluminação 2: DESLIGADA</p><a class=\"button button-on\" href=\"/led2on\">Acender</a>\n";}
-
-  ptr +="</body>\n";
-  ptr +="</html>\n";
-  return ptr;
+void handle_toggle() {
+  ledStatus = !ledStatus; // Inverte o estado do LED
+  handle_OnConnect(); // Redireciona de volta para a página inicial após a ação
 }
