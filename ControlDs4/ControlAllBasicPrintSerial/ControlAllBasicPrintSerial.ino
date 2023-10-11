@@ -1,4 +1,50 @@
 #include <Bluepad32.h>
+
+#define motorEF 18 // Motor ESQUERDO anda para FRENTE
+#define motorET 19 // Motor ESQUERDO anda para TRÁS
+#define motorDF 13 // Motor DIREITO anda para FRENTE
+#define motorDT 12 // Motor DIREITO anda para TRÁS
+#define SensorEsquerdo 36 // Pino analógico para o sensor do lado ESQUERDO
+#define SensorDireito 39 // Pino analógico para o sensor do lado DIREITO
+#define velocidade 250 //Controle de velocidade do PWM
+#define branco 100 //Definição da intensidade do branco
+#define preto 250 //Definição da intensidade do preto
+void tras(void) // Ambos motores são acionados reversamente, o robô anda para TRÁS
+{
+analogWrite(motorEF, velocidade);
+analogWrite(motorET, 0);
+analogWrite(motorDF, velocidade);
+analogWrite(motorDT, 0);
+}
+void frente(void) // Ambos motores são acionados, o robô anda para FRENTE
+{
+analogWrite(motorEF, 0);
+analogWrite(motorET, velocidade);
+analogWrite(motorDF, 0);
+analogWrite(motorDT, velocidade);
+}
+void esquerda(void) // Apenas o motor direito é acionado, virando para ESQUERDA
+{
+analogWrite(motorEF, 0);
+analogWrite(motorET, 0);
+analogWrite(motorDF, 0);
+analogWrite(motorDT, velocidade);
+}
+void direita(void) // Apenas o motor esquerdo é acionado, virando para DIREITA
+{
+analogWrite(motorEF, 0);
+analogWrite(motorET, velocidade);
+analogWrite(motorDF, 0);
+analogWrite(motorDT, 0);
+}
+void para(void) // Todos motores ficam parados
+{
+analogWrite(motorEF, 0);
+analogWrite(motorET, 0);
+analogWrite(motorDF, 0);
+analogWrite(motorDT, 0);
+}
+
 GamepadPtr meuControle = nullptr; 
 GamepadPtr meusGamepads[BP32_MAX_GAMEPADS];
 
@@ -63,6 +109,18 @@ void setup() {
 
 // Função de loop do Arduino. Executada na CPU 1
 void loop() {
+  
+int valorSenDir = analogRead(SensorDireito);
+int valorSenEsq = analogRead(SensorEsquerdo);
+if((valorSenEsq < branco ) && (valorSenDir < branco)) {
+  frente();
+}
+else if((valorSenEsq > preto ) && (valorSenDir < branco)) {
+  esquerda();
+}
+else if((valorSenEsq < branco) && (valorSenDir > preto)) {
+  direita();
+ }
   // Esta chamada obtém todas as informações do gamepad do módulo NINA (ESP32).
   // Basta chamar esta função em seu loop principal.
   // Os ponteiros dos gamepads (aqueles recebidos nas chamadas de retorno) são atualizados
@@ -84,8 +142,7 @@ void loop() {
         // É possível alterá-lo chamando:
         switch (indiceCor % 3) {
         case 0:
-          // Vermelho
-          meuGamepad->setColorLED(255, 255, 0);
+          analogWrite(motorET, velocidade);
           break;
         case 1:
           // Verde

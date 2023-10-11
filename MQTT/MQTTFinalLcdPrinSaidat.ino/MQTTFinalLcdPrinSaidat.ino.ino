@@ -1,115 +1,62 @@
-#include <Wire.h> // Library used to manage communication between devices using the I2C protocol
-#include <LiquidCrystal_I2C.h> // Library for controlling an I2C LCD display
-#include "WiFi.h" // Library for configuring and connecting to Wi-Fi
-#include <PubSubClient.h> // Library for using the MQTT protocol
-LiquidCrystal_I2C lcd(0x27, 16, 2); // Initializing an object for the LCD display with address 0x27, 16 columns, and 2 rows.
-int ledPin = 15;
-// Wi-Fi connection parameters
-const char* ssid = "SSID"; // Wi-Fi network name
-const char* password = "PASSWORD"; // Wi-Fi network password
+#define motorEF 11 // Motor ESQUERDO anda para FRENTE
+#define motorET 10 // Motor ESQUERDO anda para TRÁS
+#define motorDF 3 // Motor DIREITO anda para FRENTE
+#define motorDT 5 // Motor DIREITO anda para TRÁS
+#define SensorEsquerdo A0 // Pino analógico para o sensor do lado ESQUERDO
+#define SensorDireito A1 // Pino analógico para o sensor do lado DIREITO
 
-// MQTT Broker
-const char *mqtt_broker = "mqtt-dashboard.com"; // MQTT broker host
-const char *topic = "YOURTOPIC"; // Topic to subscribe to and publish
-const char *mqtt_username = ""; // MQTT username
-const char *mqtt_password = ""; // MQTT password
-const int mqtt_port = 1883; // MQTT port
+#define velocidade 250 //Controle de velocidade do PWM
+#define branco 100 //Definição da intensidade do branco
+#define preto 250 //Definição da intensidade do preto
 
-// Variables
-bool mqttStatus = 0;
+void setup(){
+}
 
-// Objects
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-// Function prototypes
-bool connectMQTT();
-void callback(char *topic, byte * payload, unsigned int length);
-
-void setup(void)
+void tras(void) // Ambos motores são acionados reversamente, o robô anda para TRÁS
 {
-  pinMode(ledPin, OUTPUT);
-  lcd.init(); // Initializes communication with the connected display
-  lcd.clear(); // Clears the display screen
-  lcd.backlight(); // Turns on the backlight of the display
-  Serial.begin(9600);
-
-  // Connect to Wi-Fi
-  WiFi.begin(ssid, password);
-
-  // Waiting for connection
-  Serial.println();
-  Serial.print("Connecting");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.println("WiFi connected");
-
-  // Send IP over UART
-  Serial.println(WiFi.localIP());
-
-  mqttStatus = connectMQTT();
-
+analogWrite(motorEF, velocidade);
+analogWrite(motorET, 0);
+analogWrite(motorDF, velocidade);
+analogWrite(motorDT, 0);
 }
-
-void loop() {
-  static long long pooling = 0;
-  client.loop();
+void frente(void) // Ambos motores são acionados, o robô anda para FRENTE
+{
+analogWrite(motorEF, 0);
+analogWrite(motorET, velocidade);
+analogWrite(motorDF, 0);
+analogWrite(motorDT, velocidade);
 }
-
-bool connectMQTT() {
-  byte tentativa = 0;
-  client.setServer(mqtt_broker, mqtt_port);
-  client.setCallback(callback);
-
-  do {
-    String client_id = "BOBSIEN-";
-    client_id += String(WiFi.macAddress());
-
-    if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-      Serial.println("Connection successful:");
-      Serial.printf("Client %s connected to the broker\n", client_id.c_str());
-    } else {
-      Serial.print("Failed to connect: ");
-      Serial.print(client.state());
-      Serial.println();
-      Serial.print("Attempt: ");
-      Serial.println(tentativa);
-      delay(2000);
-    }
-    tentativa++;
-  } while (!client.connected() && tentativa < 5);
-
-  if (tentativa < 5) {
-    // Publish and subscribe
-    client.publish(topic, "Conectado ao Broker");
-    client.subscribe(topic);
-    return 1;
-  } else {
-    Serial.println("Not connected");
-    return 0;
-  }
+void esquerda(void) // Apenas o motor direito é acionado, virando para ESQUERDA
+{
+analogWrite(motorEF, 0);
+analogWrite(motorET, 0);
+analogWrite(motorDF, 0);
+analogWrite(motorDT, velocidade);
 }
-
-void callback(char *topic, byte *payload, unsigned int length) {
-  Serial.print("Message arrived in topic: ");
-  int value = atoi((char*)payload);
-  Serial.println(topic);
-  for (unsigned int i = 0; i < length; i++) {
-    lcd.print((char)payload[i]);
-  }
-  Serial.println();
-  Serial.println("-----------------------");
-  lcd.setCursor(0, 1);
-  if (value == 10) {
-    digitalWrite(ledPin, HIGH); // Acende o LED
-    lcd.backlight();
-  } else if (value == 9) {
-    digitalWrite(ledPin, LOW); // Apaga o LED
-    lcd.noBacklight();
-  }
-  delay(5000);
-  lcd.clear();
+void direita(void) // Apenas o motor esquerdo é acionado, virando para DIREITA
+{
+analogWrite(motorEF, 0);
+analogWrite(motorET, velocidade);
+analogWrite(motorDF, 0);
+analogWrite(motorDT, 0);
+}
+void para(void) // Todos motores ficam parados
+{
+analogWrite(motorEF, 0);
+analogWrite(motorET, 0);
+analogWrite(motorDF, 0);
+analogWrite(motorDT, 0);
+}
+void loop(){
+int valorSenDir = analogRead(SensorDireito);
+int valorSenEsq = analogRead(SensorEsquerdo);
+if((valorSenEsq < branco ) && (valorSenDir < branco)) {
+  frente();
+}
+else if((valorSenEsq > preto ) && (valorSenDir < branco)) {
+  esquerda();
+}
+else if((valorSenEsq < branco) && (valorSenDir > preto)) {
+  direita();
+ }
 }
