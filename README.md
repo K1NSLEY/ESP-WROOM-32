@@ -1,4 +1,7 @@
 # ESP-WROOM-32
  A repository referring to those made on the Arduino IDE for the ESP-WOOM-32 board
-
- Estou aprendendo a programar, e a gerenciar meus repositórios
+ Welcome to my ESP-WROOM-32 repository, here you will find my main projects developed with ESP. I hope you enjoy!
+# ESP PINOUT
+<a href="https://www.linkedin.com/in/kinsley-chinda-amadi-2ba104257/">
+        <img src="https://github.com/K1NSLEY/HTML-CSS/blob/main/files/ReadMe/PinOutEsp32.svg" height="500" width="1280">
+    </a>
