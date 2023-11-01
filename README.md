@@ -8,7 +8,7 @@
 <h3>ESP-WROOM-32 Library</h3>
 
 ```sh
-ttps://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
 ```
 <h3>ESP-BLUEPAD-32 Library</h3>
 
